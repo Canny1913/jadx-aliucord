@@ -35,7 +35,6 @@ class AliucordJADX : JadxPlugin {
 	}
 
 	fun initGui(context: JadxGuiContext) {
-		context.uiRun {  }
 		context.addPopupMenuAction(
 			"Copy Aliucord hook snippet (before)", ::isHookActionEnabled, null
 		) {
@@ -108,6 +107,7 @@ class AliucordJADX : JadxPlugin {
 		if (language.isKotlin()) {
 			if (className.contains('$')) className = "`$className`"
 			if (methodName.contains('$')) methodName = "$$\"$methodName\""
+			if (node.accessFlags.isStatic) className = "$className?"
 		}
 
 		val formattedMethodArgs = methodArgs.mapIndexed { index, arg -> "p$index: $arg" }.joinToString(",\n", ",\n", "\n", DECONSTRUCTURED_ARG_LIMIT, "// too many args")
