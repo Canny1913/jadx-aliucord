@@ -97,9 +97,13 @@ class AliucordJADX : JadxPlugin {
 		val hookTypeStr = hookType.asString(language)
 
 		var className = if (options.useFullName) {
-			clazz.fullName
+			if (clazz.isInner) {
+				clazz.classInfo.type.`object`
+			} else clazz.classInfo.fullName
 		} else {
-			clazz.name
+			if (clazz.isInner) {
+				clazz.classInfo.type.`object`.substringAfterLast('.')
+			} else clazz.classInfo.shortName
 		}
 		if (language.isJava()) {
 			className = "$className.class"
@@ -138,9 +142,13 @@ class AliucordJADX : JadxPlugin {
 		var fieldName = field.name
 
 		var className = if (options.useFullName) {
-			clazz.fullName
+			if (clazz.isInner) {
+				clazz.classInfo.type.`object`
+			} else clazz.classInfo.fullName
 		} else {
-			clazz.name
+			if (clazz.isInner) {
+				clazz.classInfo.type.`object`.substringAfterLast('.')
+			} else clazz.classInfo.shortName
 		}
 
 		if (language.isKotlin()) {
