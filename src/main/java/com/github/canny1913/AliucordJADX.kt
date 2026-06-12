@@ -6,9 +6,11 @@ import jadx.api.plugins.JadxPluginContext
 import jadx.api.plugins.JadxPluginInfo
 import jadx.api.plugins.JadxPluginInfoBuilder
 import jadx.api.plugins.gui.JadxGuiContext
+import jadx.core.dex.attributes.AType
 import jadx.core.dex.info.ClassInfo
 import jadx.core.dex.instructions.args.ArgType
 import jadx.core.dex.instructions.args.PrimitiveType
+import jadx.core.dex.nodes.ClassNode
 import jadx.core.dex.nodes.FieldNode
 import jadx.core.dex.nodes.MethodNode
 import jadx.core.utils.exceptions.JadxRuntimeException
@@ -96,15 +98,8 @@ class AliucordJADX : JadxPlugin {
 		var methodName = "\"${method.name}\""
 		val hookTypeStr = hookType.asString(language)
 
-		var className = if (options.useFullName) {
-			if (clazz.isInner) {
-				clazz.classInfo.type.`object`
-			} else clazz.classInfo.fullName
-		} else {
-			if (clazz.isInner) {
-				clazz.classInfo.type.`object`.substringAfterLast('.')
-			} else clazz.classInfo.shortName
-		}
+
+		var className = getClassName(clazz, options.useFullName)
 		if (language.isJava()) {
 			className = "$className.class"
 		}
@@ -139,28 +134,22 @@ class AliucordJADX : JadxPlugin {
 		val field = node.fieldInfo
 		val fieldType = mapFieldType(node.type)
 		val clazz = node.declaringClass
+		var className = getClassName(clazz, options.useFullName)
+
 		var fieldName = field.name
-
-		var className = if (options.useFullName) {
-			if (clazz.isInner) {
-				clazz.classInfo.type.`object`
-			} else clazz.classInfo.fullName
-		} else {
-			if (clazz.isInner) {
-				clazz.classInfo.type.`object`.substringAfterLast('.')
-			} else clazz.classInfo.shortName
-		}
-
 		if (language.isKotlin()) {
 			if (className.contains('$')) className = "`$className`"
-			fieldName = if (fieldName.contains('$')) {
-				"$$\"$fieldName\""
-			} else {
-				"\"$fieldName\""
-			}
+			if (fieldName.contains('$')) fieldName = "`$fieldName`"
 		}
+		return "var $className.$fieldName by accessField<$fieldType>()"
+	}
 
-		return "var $className.exampleField by accessField<$fieldType>($fieldName)"
+	fun getClassName(clazz: ClassNode, short: Boolean): String {
+		return if (clazz.isInner && clazz.contains(AType.RENAME_REASON)) { // bad workaround for supposedly "invalid" names
+			if (short) clazz.classInfo.type.`object`.substringAfterLast('.') else clazz.classInfo.type.`object`
+		} else {
+			if (short) clazz.classInfo.shortName else clazz.classInfo.fullName
+		}
 	}
 
 	fun mapFieldType(type: ArgType): String {
